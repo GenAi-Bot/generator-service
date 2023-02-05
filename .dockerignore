@@ -1,0 +1,4 @@
+.env
+messages
+dist
+node_modules
