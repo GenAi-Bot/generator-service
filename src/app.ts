@@ -1,13 +1,19 @@
 import Koa, { Context } from "koa";
 import koaHelmet from "koa-helmet";
 import koaLogger from "koa-logger";
-import rateLimit from "koa-ratelimit";
+import { createClient } from "redis";
 import { LocalDataKeeper } from "./data-keeper/LocalDataKeeper";
 
 import { symbolsCount, StringGenerator } from "./markov";
 
+const RATELIMIT_MAX_REQUESTS = 5;
+const RATELIMIT_TIME = 15 * 1e3;
+
 const app = new Koa();
-const messagesKeeper = new LocalDataKeeper("/data/messages");
+const redisClient = createClient({
+    url: process.env.REDIS_URL
+});
+const messagesKeeper = new LocalDataKeeper(process.env.MESSAGES_PATH || "/data/messages");
 
 app.use(koaHelmet());
 app.use(koaLogger());
@@ -20,16 +26,29 @@ app.use(async (ctx: Context, next) => {
 
 app.use(async (ctx: Context, next) => {
     ctx.assert(ctx.request.query?.channel_id, 400, "Missing channel_id");
+    if (Array.isArray(ctx.request.query.channel_id))
+        ctx.request.query.channel_id = ctx.request.query.channel_id[0];
     await next();
 });
 
-app.use(rateLimit({
-    driver: "memory",
-    db: new Map(),
-    duration: 15000,
-    id: (ctx) => ctx.request.query.channel_id as string,
-    max: 5
-}));
+app.use(async (ctx: Context, next) => {
+    const key = `rate-limit:${ctx.request.query.channel_id}`;
+    const rateLimit = await redisClient.get(key);
+    if (rateLimit) {
+        const [count, timestamp] = rateLimit.split(":");
+        const [countInt, timestampInt] = [parseInt(count), parseInt(timestamp)];
+        if (countInt >= RATELIMIT_MAX_REQUESTS && Date.now() - timestampInt < RATELIMIT_TIME) {
+            ctx.throw(429, `Rate limit exceeded, try again in ${Math.ceil((RATELIMIT_TIME - (Date.now() - timestampInt)) / 1e3)} seconds`);
+        } else if (Date.now() - timestampInt >= RATELIMIT_TIME) {
+            await redisClient.set(key, "1:" + Date.now());
+        } else {
+            await redisClient.set(key, `${countInt + 1}:${timestampInt}`);
+        }
+    } else {
+        await redisClient.set(key, "1:" + Date.now());
+    }
+    await next();
+});
 
 app.use(async (ctx: Context, next) => {
     const {
@@ -74,7 +93,8 @@ app.use(async (ctx: Context, next) => {
     await next();
 });
 
-function startServer() {
+async function startServer() {
+    await redisClient.connect();
     app.listen(
         3000,
         () => console.log("Server started on port 3000")
