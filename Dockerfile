@@ -1,16 +1,11 @@
-FROM node:lts-alpine
+FROM nimlang/nim:alpine
+
+RUN apk update
+RUN apk add --no-cache pcre-dev
 
 WORKDIR /app
-
-COPY package*.json ./
-COPY tsconfig.json ./
-
-RUN npm install
-
 COPY . .
 
-EXPOSE 3000
+RUN ["nimble", "-y", "--gc:orc", "-d:release", "--opt:speed", "build"]
 
-RUN npm run build
-
-CMD [ "npm", "start" ]
+ENTRYPOINT [ "./bin/genai_generator" ]
