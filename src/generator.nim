@@ -13,7 +13,7 @@ proc unicodeStringToLower*(str: string): string =
     result.add(s.toLower.toUTF8)
 
 proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, attempts = 500, begin = "", count = 1): seq[string] =
-  let
+  var
     samples = rawSamples.mapIt((mrkvStart & " " & it & " " & mrkvEnd).unicodeStringToLower())
     words = samples.join(" ").split(" ")
 
@@ -51,3 +51,6 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
 
   for i in 0..<count:
     result.add generateAttempts()
+  dict.clear()
+  samples.setLen(0)
+  words.setLen(0)
