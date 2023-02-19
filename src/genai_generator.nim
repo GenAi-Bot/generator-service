@@ -44,7 +44,7 @@ proc main {.async.} =
       filterLinks = if query.hasKey("filter_links"): query["filter_links"] == "true" else: false
       count = if query.hasKey("count"): parseInt(query["count"], 1, 1, 5) else: 1
       begin = if query.hasKey("begin"): query["begin"] else: ""
-    let lines = await keeper.getMessages(channelId, filterLinks)
+    var lines = await keeper.getMessages(channelId, filterLinks)
     if lines.len == 0:
       await req.respond(Http404, "No messages found")
     else:
@@ -56,6 +56,7 @@ proc main {.async.} =
         )
       except:
         await req.respond(Http500, "Failed to generate string(s)")
+      lines.setLen(0)
 
   while true:
     if server.shouldAcceptRequest():
