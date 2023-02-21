@@ -39,13 +39,15 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
       if nextWord.len == 0 or nextWord == mrkvEnd: break
       output.add nextWord
       prefix = output[n..<(n + keySize)].join(" ")
+      
+    let procOutput = output.filter(proc(x: string): bool = x != mrkvStart and x != mrkvEnd)
 
-    return output.join(" ")
+    return procOutput.join(" ")
 
   proc generateAttempts(): string =
     for i in 0..<attempts:
       let res = generateLocal()
-      if res.len > maxLength: continue
+      if res.len > maxLength or res.len == 0: continue
       return res
     raise newException(CatchableError, "Failed to generate text")
 
