@@ -33,8 +33,6 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
     if not dict.hasKey(prefix):
       raise newException(CatchableError, "Prefix not found: " & prefix)
 
-    
-
     for n in 1..words.len:
       let nextWord = dict[prefix].sample()
       if nextWord.len == 0 or nextWord == mrkvEnd: break
