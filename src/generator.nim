@@ -27,12 +27,13 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
   proc generateLocal(): string =
     var
       prefix = if begin.len > 0: (mrkvStart & " " & begin) else: mrkvStart
+      output = prefix.split(' ')
+    prefix = output[^1]
 
     if not dict.hasKey(prefix):
       raise newException(CatchableError, "Prefix not found: " & prefix)
 
-    var output = prefix.split(' ')
-    prefix = output[^1]
+    
 
     for n in 1..words.len:
       let nextWord = dict[prefix].sample()
