@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.3"
+version       = "0.1.4"
 author        = "bit0r1n"
 description   = "Generator service for GenAi Discord bot"
 license       = "Proprietary"
