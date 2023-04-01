@@ -36,12 +36,16 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
     samples = rawSamples.processSamples()
     words = samples.join(" ").split(" ")
 
+  samples.setLen(0)
+
   var dict: Table[string, seq[string]]
 
   for i in 0..(words.len - keySize):
     let prefix = words[i..<(i+keySize)].join(" ")
     let suffix = if i + keySize < words.len: words[i + keySize] else: ""
     dict.mgetOrPut(prefix, @[]).add suffix
+
+  words.setLen(0)
 
   proc generateLocal(): string =
     var
@@ -67,10 +71,10 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
       let res = generateLocal()
       if res.len > maxLength or res.len == 0: continue
       return res
-    raise newException(CatchableError, "Failed to generate text")
+    raise newException(CatchableError, "Out of attempts")
 
+  defer:
+    dict.clear()
+    result.setLen(0)
   for i in 0..<count:
     result.add generateAttempts()
-  dict.clear()
-  samples.setLen(0)
-  words.setLen(0)
