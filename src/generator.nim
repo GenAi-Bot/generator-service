@@ -73,8 +73,11 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
       return res
     raise newException(CatchableError, "Out of attempts")
 
-  defer:
+  try:
+    for i in 0..<count:
+      result.add generateAttempts()
+  except CatchableError as e:
     dict.clear()
     result.setLen(0)
-  for i in 0..<count:
-    result.add generateAttempts()
+    raise e
+  dict.clear()
