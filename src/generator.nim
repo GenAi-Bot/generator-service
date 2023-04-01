@@ -35,6 +35,7 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
   var
     samples = rawSamples.processSamples()
     words = samples.join(" ").split(" ")
+    wordsLen = words.len
 
   samples.setLen(0)
 
@@ -56,7 +57,7 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
     if not dict.hasKey(prefix):
       raise newException(CatchableError, "Prefix not found: " & prefix)
 
-    for n in 1..words.len:
+    for n in 1..wordsLen:
       let nextWord = dict[prefix].sample()
       if nextWord.len == 0 or nextWord == mrkvEnd: break
       output.add nextWord

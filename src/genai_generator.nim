@@ -51,10 +51,10 @@ proc main {.async.} =
       try:
         await req.respond(
           Http200,
-          $(%(generate(lines, 1, maxSymbols, 5000, begin, count))),
+          $(%(generate(lines, 1, maxSymbols, 5, begin, count))),
           newHttpHeaders({"Content-type": "application/json; charset=utf-8"})
         )
-      except:
+      except CatchableError as e:
         await req.respond(Http500, "Failed to generate string(s)")
       lines.setLen(0)
 

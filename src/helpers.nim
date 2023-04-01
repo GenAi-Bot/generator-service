@@ -7,5 +7,5 @@ proc parseInt*(s: string, default: int = 0, min: int, max: int): int =
     let i = parseInt(s)
     if i < min: return default
     return i
-  except:
+  except CatchableError:
     return default
