@@ -14,7 +14,7 @@ iterator lines(str: string): string =
     yield str[i ..< j]
     i = j + 1
 
-proc removeURIs(str: string): string = str.replace(re"""(https?://[^\s/$.?#].[^\s]*)""")
+proc removeURIs(str: string): string = str.replace(re"""(https?:\/\/[^\s/$.?#].[^\s]*)""")
 
 proc newLocalKeeper*(messagesPath: string): LocalKeeper =
   result = LocalKeeper(messagesPath: messagesPath)
