@@ -7,6 +7,7 @@ proc main {.async.} =
   server.listen(Port(3000))
 
   let
+    maxLines = parseInt(getEnv("MAX_LINES", "-1"))
     keeper = newLocalKeeper(getEnv("KEEPER_PATH", "/data/messages"))
     redisClient = await redis.openAsync(
       getEnv("REDIS_HOST", "localhost"),
