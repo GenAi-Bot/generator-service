@@ -8,7 +8,8 @@ proc main {.async.} =
 
   let
     maxLines = parseInt(getEnv("MAX_LINES", "-1"))
-    keeper = newLocalKeeper(getEnv("KEEPER_PATH", "/data/messages"))
+    keeper = if existsEnv("KEEPER_URL"): Keeper(kind: kkRemote, url: getEnv("KEEPER_URL"), maxLines: maxLines)
+      else: Keeper(kind: kkLocal, messagesPath: getEnv("KEEPER_PATH", "/data/messages"), maxLines: maxLines)
     redisClient = await redis.openAsync(
       getEnv("REDIS_HOST", "localhost"),
       Port(parseInt(getEnv("REDIS_PORT", "6379")))
@@ -55,7 +56,7 @@ proc main {.async.} =
           $(%(generate(lines, 1, maxSymbols, 5, begin, count))),
           newHttpHeaders({"Content-type": "application/json; charset=utf-8"})
         )
-      except CatchableError as e:
+      except CatchableError:
         await req.respond(Http500, "Failed to generate string(s)")
       lines.setLen(0)
 

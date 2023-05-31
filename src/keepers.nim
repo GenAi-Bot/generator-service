@@ -1,10 +1,14 @@
-import asyncfile, os, asyncdispatch, system/io, strutils, re
+import asyncfile, os, asyncdispatch, system/io, strutils, re, httpclient, jsony
 
 type
-  BaseKeeper = ref object of RootObj
+  KeeperKind* = enum
+    kkLocal,
+    kkRemote
+  Keeper* = ref object of RootObj
     maxLines*: int
-  LocalKeeper = ref object of BaseKeeper
-    messagesPath: string
+    case kind*: KeeperKind
+    of kkLocal: messagesPath*: string
+    of kkRemote: url*: string
 
 iterator lines(str: string): string =
   var i = str.len - 1
@@ -17,29 +21,42 @@ iterator lines(str: string): string =
 
 proc removeURIs(str: string): string = str.replace(re"""(https?:\/\/[^\s/$.?#].[^\s]*)""")
 
-proc newLocalKeeper*(messagesPath: string, maxLines = high(int)): LocalKeeper =
-  result = LocalKeeper(messagesPath: messagesPath, maxLines: maxLines)
+proc getChannelPath(keeper: Keeper, channel: string): string =
+  if keeper.kind == kkLocal:
+    result = keeper.messagesPath / channel & ".txt"
+  else: raise newException(Defect, "getChannelPath can be used only with local keeper")
 
-proc getChannelPath(keeper: LocalKeeper, channel: string): string =
-  result = keeper.messagesPath / channel & ".txt"
+proc channelExists(keeper: Keeper, channel: string): bool =
+  if keeper.kind == kkLocal:
+    result = fileExists(keeper.getChannelPath(channel))
+  else: raise newException(Defect, "channelExists can be used only with local keeper")
 
-proc channelExists(keeper: LocalKeeper, channel: string): bool =
-  result = fileExists(keeper.getChannelPath(channel))
+proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[seq[string]] {.async.} =
+  case keeper.kind:
+  of kkLocal:
+    if not keeper.channelExists(channel):
+      return @[]
 
-proc getMessages*(keeper: LocalKeeper, channel: string, cleanURIs = false): Future[seq[string]] {.async.} =
-  if not keeper.channelExists(channel):
-    return @[]
+    let path = keeper.getChannelPath(channel)
+    var file = openAsync(path, fmRead)
+    defer: file.close()
+    let content = await file.readAll()
+    for line in lines(content):
+      if cleanURIs:
+        let str = removeURIs(line).strip
+        if str.len > 0:
+          result.add(str)
+      else:
+        result.add(line)
 
-  let path = keeper.getChannelPath(channel)
-  var file = openAsync(path, fmRead)
-  defer: file.close()
-  let content = await file.readAll()
-  for line in lines(content):
-    if cleanURIs:
-      let str = removeURIs(line).strip
-      if str.len > 0:
-        result.add(str)
-    else:
-      result.add(line)
-
-    if result.len == keeper.maxLines: break
+      if result.len == keeper.maxLines: break
+  of kkRemote:
+    var client = newAsyncHttpClient()
+    result = (
+      await client.getContent(
+        keeper.url
+          .replace("{channel_id}", channel)
+          .replace("{max_lines}", $keeper.maxLines)
+          .replace("{clean_uri}", $cleanURIs)
+      )
+    ).fromJson(seq[string])
