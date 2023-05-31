@@ -8,4 +8,6 @@ COPY . .
 
 RUN ["nimble", "-y", "--mm:orc", "-d:release", "--opt:speed", "build"]
 
+EXPOSE 3000/tcp
+
 ENTRYPOINT [ "./bin/genai_generator" ]
