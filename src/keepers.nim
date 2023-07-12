@@ -56,8 +56,8 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
     result = (
       await client.getContent(
         keeper.url
-      .replace("{channel_id}", channel)
-      .replace("{max_lines}", $keeper.maxLines)
-      .replace("{clean_uri}", $cleanURIs)
-    )
+          .replace("{channel_id}", channel)
+          .replace("{max_lines}", $keeper.maxLines)
+          .replace("{clean_uri}", $cleanURIs)
+      )
     ).fromJson(seq[string])
