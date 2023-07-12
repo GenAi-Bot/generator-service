@@ -47,8 +47,9 @@ proc generate*(rawSamples: seq[string]; keySize: Positive; maxLength = 500;
     let
       prefix = words[i..<(i+keySize)].join(" ")
       suffix = if i + keySize < words.len: words[i + keySize] else: ""
-    var keyStore = dict.mgetOrPut(prefix, @[])
-    if not keyStore.contains(suffix): keyStore.add(suffix)
+
+    if prefix notin dict: dict[prefix] = @[]
+    if suffix notin dict[prefix]: dict[prefix].add(suffix)
 
   words.setLen(0)
 
