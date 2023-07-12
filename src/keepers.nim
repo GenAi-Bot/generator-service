@@ -31,7 +31,8 @@ proc channelExists(keeper: Keeper, channel: string): bool =
     result = fileExists(keeper.getChannelPath(channel))
   else: raise newException(Defect, "channelExists can be used only with local keeper")
 
-proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[seq[string]] {.async.} =
+proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
+    seq[string]] {.async.} =
   case keeper.kind:
   of kkLocal:
     if not keeper.channelExists(channel):
@@ -55,8 +56,8 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[se
     result = (
       await client.getContent(
         keeper.url
-          .replace("{channel_id}", channel)
-          .replace("{max_lines}", $keeper.maxLines)
-          .replace("{clean_uri}", $cleanURIs)
-      )
+      .replace("{channel_id}", channel)
+      .replace("{max_lines}", $keeper.maxLines)
+      .replace("{clean_uri}", $cleanURIs)
+    )
     ).fromJson(seq[string])

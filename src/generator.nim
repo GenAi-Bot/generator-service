@@ -23,7 +23,8 @@ proc processSamples(samples: seq[string]): seq[string] =
       if word.startsWith("http"):
         let sampleUri = parseUri(word)
 
-        subResult.add(if sampleUri.scheme == "http" or sampleUri.scheme == "https": word else: word.unicodeStringToLower())
+        subResult.add(if sampleUri.scheme == "http" or sampleUri.scheme ==
+            "https": word else: word.unicodeStringToLower())
       else:
         subResult.add(word.unicodeStringToLower())
 
@@ -31,7 +32,8 @@ proc processSamples(samples: seq[string]): seq[string] =
 
     if subResult.len != 2: result.add(subResult.join(" "))
 
-proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, attempts = 500, begin = "", count = 1): seq[string] =
+proc generate*(rawSamples: seq[string]; keySize: Positive; maxLength = 500;
+    attempts = 500; begin = ""; count = 1): seq[string] =
   var
     samples = rawSamples.processSamples()
     words = samples.join(" ").split(" ")
@@ -64,8 +66,9 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
       if nextWord.len == 0 or nextWord == mrkvEnd: break
       output.add nextWord
       prefix = output[n..<(n + keySize)].join(" ")
-      
-    let procOutput = output.filter(proc(x: string): bool = x != mrkvStart and x != mrkvEnd)
+
+    let procOutput = output.filter(proc(x: string): bool = x != mrkvStart and
+        x != mrkvEnd)
 
     return procOutput.join(" ")
 

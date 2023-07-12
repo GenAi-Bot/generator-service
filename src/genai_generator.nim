@@ -8,8 +8,10 @@ proc main {.async.} =
 
   let
     maxLines = parseInt(getEnv("MAX_LINES", "-1"))
-    keeper = if existsEnv("KEEPER_URL"): Keeper(kind: kkRemote, url: getEnv("KEEPER_URL"), maxLines: maxLines)
-      else: Keeper(kind: kkLocal, messagesPath: getEnv("KEEPER_PATH", "/data/messages"), maxLines: maxLines)
+    keeper = if existsEnv("KEEPER_URL"): Keeper(kind: kkRemote, url: getEnv(
+        "KEEPER_URL"), maxLines: maxLines)
+      else: Keeper(kind: kkLocal, messagesPath: getEnv("KEEPER_PATH",
+          "/data/messages"), maxLines: maxLines)
     redisClient = await redis.openAsync(
       getEnv("REDIS_HOST", "localhost"),
       Port(parseInt(getEnv("REDIS_PORT", "6379")))
@@ -42,8 +44,10 @@ proc main {.async.} =
     let
       query = req.url.query.queryParamsToTable
       channelId = query["channel_id"]
-      maxSymbols = if query.hasKey("max_symbols"): parseInt(query["max_symbols"], 1500, 1, 2000) else: 1500
-      filterLinks = if query.hasKey("filter_links"): query["filter_links"] == "true" else: false
+      maxSymbols = if query.hasKey("max_symbols"): parseInt(query[
+          "max_symbols"], 1500, 1, 2000) else: 1500
+      filterLinks = if query.hasKey("filter_links"): query["filter_links"] ==
+          "true" else: false
       count = if query.hasKey("count"): parseInt(query["count"], 1, 1, 5) else: 1
       begin = if query.hasKey("begin"): query["begin"] else: ""
     var lines = await keeper.getMessages(channelId, filterLinks)

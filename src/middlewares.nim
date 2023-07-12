@@ -34,7 +34,7 @@ proc ratelimit*(e: MiddlewareEntity): Future[Request] {.async.} =
       val = lastReq.split(":")
       count = parseInt(val[0])
       time = parseInt(val[1])
-    
+
     if count >= mwMaxRequests and epochTime().int - time < mwMaxTime:
       raise newException(MiddlewareExitError, "429:Too many requests")
     elif epochTime().int - time >= mwMaxTime:
