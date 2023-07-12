@@ -42,9 +42,11 @@ proc generate*(rawSamples: seq[string]; keySize: Positive, maxLength = 500, atte
   var dict: Table[string, seq[string]]
 
   for i in 0..(words.len - keySize):
-    let prefix = words[i..<(i+keySize)].join(" ")
-    let suffix = if i + keySize < words.len: words[i + keySize] else: ""
-    dict.mgetOrPut(prefix, @[]).add suffix
+    let
+      prefix = words[i..<(i+keySize)].join(" ")
+      suffix = if i + keySize < words.len: words[i + keySize] else: ""
+    var keyStore = dict.mgetOrPut(prefix, @[])
+    if not keyStore.contains(suffix): keyStore.add(suffix)
 
   words.setLen(0)
 
