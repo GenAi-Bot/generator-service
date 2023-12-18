@@ -1,4 +1,4 @@
-import asyncfile, os, asyncdispatch, system/io, strutils, re, httpclient, jsony
+import asyncfile, os, asyncdispatch, strutils, re, httpclient, jsony
 
 type
   KeeperKind* = enum
@@ -10,7 +10,7 @@ type
     of kkLocal: messagesPath*: string
     of kkRemote: url*: string
 
-iterator lines(str: string): string =
+iterator ascendingLines(str: string): string =
   var i = str.len - 1
   while i >= 0:
     var j = i
@@ -41,8 +41,16 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
     let path = keeper.getChannelPath(channel)
     var file = openAsync(path, fmRead)
     defer: file.close()
-    let content = await file.readAll()
-    for line in lines(content):
+    
+    let
+      fileSize = file.getFileSize()
+      maxRead = if keeper.maxLines == -1: fileSize else: keeper.maxLines * 4_000
+      startPos = if maxRead == fileSize: 0 else: (if maxRead > fileSize: 0 else: fileSize - maxRead)
+
+    file.setFilePos(startPos)
+
+    let content = await file.read(maxRead)
+    for line in ascendingLines(content):
       if cleanURIs:
         let str = removeURIs(line).strip
         if str.len > 0:
