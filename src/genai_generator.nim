@@ -3,7 +3,9 @@ import redis
 import keepers, middlewares, helpers, generator
 
 proc main {.async.} =
-  var server = newAsyncHttpServer()
+  var
+    server = newAsyncHttpServer()
+    redisClient: AsyncRedis
   server.listen(Port(3000))
 
   let
@@ -12,15 +14,17 @@ proc main {.async.} =
         "KEEPER_URL"), maxLines: maxLines)
       else: Keeper(kind: kkLocal, messagesPath: getEnv("KEEPER_PATH",
           "/data/messages"), maxLines: maxLines)
-    redisClient = await redis.openAsync(
-      getEnv("REDIS_HOST", "localhost"),
-      Port(parseInt(getEnv("REDIS_PORT", "6379")))
-    )
     middlewareSeq = [
       acceptRootGet,
       checkChannelIDQuery,
       ratelimit
     ]
+
+  if existsEnv("REDIS_HOST"):
+    redisClient = await redis.openAsync(
+      getEnv("REDIS_HOST", "localhost"),
+      Port(parseInt(getEnv("REDIS_PORT", "6379")))
+    )
 
   proc cb(req: Request) {.async gcsafe.} =
     # middlewares

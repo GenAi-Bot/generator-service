@@ -24,6 +24,7 @@ proc checkChannelIDQuery*(e: MiddlewareEntity): Future[Request] {.async.} =
   return e.req
 
 proc ratelimit*(e: MiddlewareEntity): Future[Request] {.async.} =
+  if e.redis == nil: return e.req
   let
     reqQuery = e.req.url.query.queryParamsToTable
     key = "rate-limit:" & reqQuery["channel_id"]

@@ -87,4 +87,5 @@ proc generate*(rawSamples: seq[string]; keySize: Positive; maxLength = 500;
     dict.clear()
     result.setLen(0)
     raise e
-  dict.clear()
+  finally:
+    dict.clear()
