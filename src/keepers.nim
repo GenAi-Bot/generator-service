@@ -45,7 +45,7 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
     let
       fileSize = file.getFileSize()
       maxRead = if keeper.maxLines == -1: fileSize else: keeper.maxLines * 4_000
-      startPos = if maxRead == fileSize or maxRead > fileSize: 0 else: fileSize - maxRead
+      startPos = if maxRead >= fileSize: 0 else: fileSize - maxRead
 
     file.setFilePos(startPos)
 
