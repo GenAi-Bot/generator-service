@@ -49,7 +49,7 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
 
     file.setFilePos(startPos)
 
-    let content = await file.read(maxRead)
+    let content = await file.read(maxRead.int)
     for line in ascendingLines(content):
       if cleanURIs:
         let str = removeURIs(line).strip
