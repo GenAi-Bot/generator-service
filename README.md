@@ -1,6 +1,9 @@
 # genai-generator-service
 Generator service for GenAi Discord bot
 
+## Licensing
+There is no license in this repository as this is open source for evaluation purposes only, use in commercial/personal applications is prohibited (excluding [GenAi bot project](https://genai.bot/))
+
 ## Usage
 0. This service requires a redis server (for rate limiting)
 1. Clone the repository
