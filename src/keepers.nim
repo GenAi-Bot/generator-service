@@ -51,12 +51,13 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
 
     let content = await file.read(maxRead.int)
     for line in ascendingLines(content):
+      let processLine = line.replace(re"""^\d{17,19}ඞ""")
       if cleanURIs:
-        let str = removeURIs(line).strip
+        let str = removeURIs(processLine).strip
         if str.len > 0:
           result.add(str)
       else:
-        result.add(line)
+        result.add(processLine)
 
       if result.len == keeper.maxLines: break
   of kkRemote:
