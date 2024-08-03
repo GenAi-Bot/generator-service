@@ -30,16 +30,18 @@ proc main {.async.} =
     # middlewares
     var process = true
     let mwEntity = MiddlewareEntity(req: req, redis: redisClient)
+
     for mw in middlewareSeq:
       try:
-        discard await mw(mwEntity)
+        await mw(mwEntity)
       except MiddlewareExitError as e:
         process = false
-        let
-          msg = e.msg.split("\n")[0].split(":")
-          code = parseInt(msg[0])
-          message = msg[1]
-        await req.respond(HttpCode(code), message)
+        await req.respond(e.code, e.msg.split('\n')[0]) # in debug mode `msg` includes async traceback, which is not really needed in response
+        break
+      except Exception as e:
+        process = false
+        await req.respond(Http500, "Internal server error")
+        echo e.trace
         break
 
     if not process: return
@@ -48,24 +50,27 @@ proc main {.async.} =
     let
       query = req.url.query.queryParamsToTable
       channelId = query["channel_id"]
-      maxSymbols = if query.hasKey("max_symbols"): parseInt(query[
-          "max_symbols"], 1500, 1, 2000) else: 1500
+      maxSymbols = if query.hasKey("max_symbols"): parseInt(str = query["max_symbols"],
+        default = 1500, min = 1, max = 2000) else: 1500
       filterLinks = if query.hasKey("filter_links"): query["filter_links"] ==
           "true" else: false
-      count = if query.hasKey("count"): parseInt(query["count"], 1, 1, 5) else: 1
+      count = if query.hasKey("count"): parseInt(str = query["count"], default = 1, min = 1, max = 5) else: 1
       begin = if query.hasKey("begin"): query["begin"] else: ""
+
     var lines = await keeper.getMessages(channelId, filterLinks)
     if lines.len == 0:
       await req.respond(Http404, "No messages found")
-    else:
-      try:
-        await req.respond(
-          Http200,
-          $(%(generate(lines, 1, maxSymbols, 5, begin, count))),
-          newHttpHeaders({"Content-type": "application/json; charset=utf-8"})
-        )
-      except CatchableError:
-        await req.respond(Http500, "Failed to generate string(s)")
+      return
+
+    try:
+      await req.respond(
+        Http200,
+        $(%(generate(lines, 1, maxSymbols, 5, begin, count))),
+        newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
+      )
+    except CatchableError:
+      await req.respond(Http500, "Failed to generate string(s)")
+    finally:
       lines.setLen(0)
 
   while true:
