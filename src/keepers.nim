@@ -1,5 +1,4 @@
 import asyncfile, os, asyncdispatch, strutils, re, httpclient, jsony
-from unicode import toRunes, `==`
 
 type
   KeeperKind* = enum
@@ -52,7 +51,7 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
 
     let content = await file.read(maxRead.int)
     for line in ascendingLines(content):
-      let processLine = if line.len > 21 and toRunes(line[19..21]) == toRunes("ඞ"): line.replace(re"""^\d{17,19}ඞ""") else: line
+      let processLine = if line.len > 20 and line.find("ඞ") in 17..19: line.replace(re"""^\d{17,19}ඞ""") else: line
       if cleanURIs:
         let str = removeURIs(processLine).strip
         if str.len > 0:
