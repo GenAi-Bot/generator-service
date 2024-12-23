@@ -19,8 +19,6 @@ iterator ascendingLines(str: string): string =
     yield str[j + 1 ..< i + 1]
     i = j - 1
 
-proc removeURIs(str: string): string = str.replace(re"""(https?:\/\/[^\s/$.?#].[^\s]*)""")
-
 proc getChannelPath(keeper: Keeper, channel: string): string =
   if keeper.kind == kkLocal:
     result = keeper.messagesPath / channel & ".txt"
@@ -46,14 +44,16 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
       fileSize = file.getFileSize()
       maxRead: int64 = if keeper.maxLines == -1: fileSize else: keeper.maxLines * 4_000
       startPos: int64 = if maxRead >= fileSize: 0 else: fileSize - maxRead
+      splitterRe = re"""^\d{17,19}ඞ"""
+      uriRe = re"""(https?:\/\/[^\s/$.?#].[^\s]*)"""
 
     file.setFilePos(startPos)
 
     let content = await file.read(maxRead.int)
     for line in ascendingLines(content):
-      let processLine = if line.len > 20 and line.find("ඞ") in 17..19: line.replace(re"""^\d{17,19}ඞ""") else: line
+      let processLine = if line.len > 20 and line.find("ඞ") in 17..19: line.replace(splitterRe) else: line
       if cleanURIs:
-        let str = removeURIs(processLine).strip
+        let str = processLine.replace(uriRe).strip
         if str.len > 0:
           result.add(str)
       else:
