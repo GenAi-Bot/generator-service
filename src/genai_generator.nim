@@ -6,7 +6,9 @@ proc main {.async.} =
   var
     server = newAsyncHttpServer()
     redisClient: AsyncRedis
-  server.listen(Port(3000))
+    port = parseInt(getEnv("PORT", "3000"))
+  echo "Listening for port ", port
+  server.listen(Port(port))
 
   let
     maxLines = parseInt(getEnv("MAX_LINES", "-1"))
@@ -14,13 +16,14 @@ proc main {.async.} =
         "KEEPER_URL"), maxLines: maxLines)
       else: Keeper(kind: kkLocal, messagesPath: getEnv("KEEPER_PATH",
           "/data/messages"), maxLines: maxLines)
-    middlewareSeq = [
+    middlewareSeq = @[
       acceptRootGet,
       checkChannelIDQuery,
       ratelimit
     ]
 
   if existsEnv("REDIS_HOST"):
+    echo "Found REDIS_HOST, connecting to redis.."
     redisClient = await redis.openAsync(
       getEnv("REDIS_HOST", "localhost"),
       Port(parseInt(getEnv("REDIS_PORT", "6379")))
@@ -50,12 +53,13 @@ proc main {.async.} =
     let
       query = req.url.query.queryParamsToTable
       channelId = query["channel_id"]
-      maxSymbols = if query.hasKey("max_symbols"): parseInt(str = query["max_symbols"],
-        default = 1500, min = 1, max = 2000) else: 1500
+      maxSymbols = parseInt(str = query.getOrDefault("max_symbols"),
+        default = 1500, min = 1, max = 2000)
       filterLinks = if query.hasKey("filter_links"): query["filter_links"] ==
           "true" else: false
-      count = if query.hasKey("count"): parseInt(str = query["count"], default = 1, min = 1, max = 5) else: 1
-      begin = if query.hasKey("begin"): query["begin"] else: ""
+      count = parseInt(str = query.getOrDefault("count"), default = 1, min = 1, max = 5)
+      keySize = parseInt(str = query.getOrDefault("key_size"), default = 1, min = 1, max = 3)
+      begin = query.getOrDefault("begin")
 
     var lines = await keeper.getMessages(channelId, filterLinks)
     if lines.len == 0:
@@ -65,11 +69,15 @@ proc main {.async.} =
     try:
       await req.respond(
         Http200,
-        $(%(generate(lines, 1, maxSymbols, 5, begin, count))),
+        $(
+          %(
+            lines.generate(keySize = keySize, maxLength = maxSymbols, attempts = 5, begin = begin, count = count)
+          )
+        ),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
       )
     except CatchableError:
-      await req.respond(Http500, "Failed to generate string(s)")
+      await req.respond(Http500, "Failed to generate")
     finally:
       lines.setLen(0)
 
