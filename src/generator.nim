@@ -34,7 +34,6 @@ proc buildModel(samples: seq[string], keySize: int): MarkovModel =
     for i in 0 ..< words.len - keySize:
       result.mgetOrPut(words[i ..< i + keySize])
         .incl(words[i + keySize])
-        # .add(if i + keySize < words.len: @[ words[i + keySize] ] else: @[])
     words.setLen(0)
   
   processedSamples.setLen(0)
@@ -62,7 +61,7 @@ proc generateText(model: MarkovModel, keySize: int, maxLength: int, begin = ""):
     currentLength = result.len
 
   while currentLength < maxLength:
-    if currentKey notin model: break
+    if currentKey notin model: raise newException(CatchableError, "Key not found in model: " & $currentKey)
 
     let nextWord = model[currentKey].items.toSeq().sample()
     if nextWord == mrkvEndToken: break

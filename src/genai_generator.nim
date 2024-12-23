@@ -21,6 +21,7 @@ proc main {.async.} =
       checkChannelIDQuery,
       ratelimit
     ]
+    maxAttempts = parseInt(getEnv("MAX_ATTEMPTS", "5"))
 
   if existsEnv("REDIS_HOST"):
     echo "Found REDIS_HOST, connecting to redis.."
@@ -71,7 +72,7 @@ proc main {.async.} =
         Http200,
         $(
           %(
-            lines.generate(keySize = keySize, maxLength = maxSymbols, attempts = 5, begin = begin, count = count)
+            lines.generate(keySize = keySize, maxLength = maxSymbols, attempts = maxAttempts, begin = begin, count = count)
           )
         ),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
