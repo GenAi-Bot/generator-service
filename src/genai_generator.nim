@@ -77,8 +77,10 @@ proc main {.async.} =
         ),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
       )
-    except CatchableError:
-      await req.respond(Http500, "Failed to generate")
+    except CatchableError as e:
+      if e.msg.startsWith("Key not found in model:"):
+        await req.respond(Http500, "Not enough samples to use provided \"begin\"")
+      else: await req.respond(Http500, "Failed to generate")
     finally:
       lines.setLen(0)
 
