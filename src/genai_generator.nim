@@ -59,7 +59,6 @@ proc main {.async.} =
       filterLinks = if query.hasKey("filter_links"): query["filter_links"] ==
           "true" else: false
       count = parseInt(str = query.getOrDefault("count"), default = 1, min = 1, max = 5)
-      keySize = parseInt(str = query.getOrDefault("key_size"), default = 1, min = 1, max = 3)
       begin = query.getOrDefault("begin")
 
     var lines = await keeper.getMessages(channelId, filterLinks)
@@ -72,7 +71,7 @@ proc main {.async.} =
         Http200,
         $(
           %(
-            lines.generate(keySize = keySize, maxLength = maxSymbols, attempts = maxAttempts, begin = begin, count = count)
+            lines.generate(maxLength = maxSymbols, attempts = maxAttempts, begin = begin, count = count)
           )
         ),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
