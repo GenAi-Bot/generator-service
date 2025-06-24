@@ -4,7 +4,7 @@ on:
     types: [ published ]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     name: Build and push genai/messages-service image
     steps:
       - name: Checkout
@@ -22,7 +22,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           context: ./
           push: true
           tags: ${{ secrets.REGISTRY }}/genai/messages-service:latest
