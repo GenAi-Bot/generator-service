@@ -10,6 +10,15 @@ const
   mrkvStartToken = "__start"
   mrkvEndToken = "__end"
 
+proc wordProcess(word: string): string =
+  if word.startsWith("http"): # nested if statement just to not check for http: AND https: EVERY word, sorry for nested if !!
+    result = if word.startsWith("http:") or word.startsWith("https:"): word
+      else: word.toLower()
+  elif word.startsWith("<a:") or word.startsWith("<:"):
+    result = word
+  else:
+    result = word.toLower()
+
 iterator processSamples(samples: seq[string]): string =
   for sample in samples:
     let words = sample.splitWhitespace()
@@ -17,12 +26,7 @@ iterator processSamples(samples: seq[string]): string =
 
     for word in words:
       if word.len == 0 or word == mrkvStartToken or word == mrkvEndToken: continue
-
-      if word.startsWith("http"): # nested if statement just to not check for http: AND https: EVERY word, sorry for nested if !!
-        subResult.add(if word.startsWith("http:") or word.startsWith("https:"): word
-          else: word.toLower())
-      else:
-        subResult.add(word.toLower())
+      subResult.add(wordProcess(word))
 
     if subResult.len != 0: yield subResult.join(" ")
 

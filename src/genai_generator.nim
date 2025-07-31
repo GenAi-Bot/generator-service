@@ -61,13 +61,7 @@ proc main {.async.} =
       count = parseInt(str = query.getOrDefault("count"), default = 1, min = 1, max = 5)
       begin = query.getOrDefault("begin")
 
-    var lines: seq[string]
-
-    try:
-      lines.add(await keeper.getMessages(channelId, filterLinks))
-    except:
-      await req.respond(Http500, "Failed to get messages")
-      return
+    var lines = await keeper.getMessages(channelId, filterLinks)
 
     if lines.len == 0:
       await req.respond(Http404, "No messages found")
