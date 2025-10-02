@@ -61,7 +61,8 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
 
       if result.len == keeper.maxLines: break
   of kkRemote:
-    var client = newAsyncHttpClient()
+    let client = newAsyncHttpClient()
+    defer: client.close()
     result = (
       await client.getContent(
         keeper.url
