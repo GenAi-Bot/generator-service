@@ -5,6 +5,8 @@ randomize()
 
 type
   MarkovModel = Table[string, HashSet[string]]
+  InvalidStartError* = object of CatchableError
+  OutOfAttemptsError* = object of CatchableError
 
 const
   mrkvStartToken = "__start"
@@ -50,7 +52,7 @@ proc generateText(model: MarkovModel, maxLength: int, begin = ""): string =
     if not model.hasKey(mrkvStartToken): raise newException(ValueError, "Model is empty")
 
   while result.len < maxLength:
-    if currentKey notin model: raise newException(CatchableError, "Key not found in model: " & $currentKey)
+    if currentKey notin model: raise newException(InvalidStartError, "Key not found in model: " & $currentKey)
 
     let nextWord = model[currentKey].toSeq().sample()
     if nextWord == mrkvEndToken: break
@@ -74,11 +76,10 @@ proc generate*(rawSamples: seq[string]; maxLength = 500;
       let res = model.generateText(maxLength = maxLength, begin = begin)
       if res.len == 0: continue
       return res
-    raise newException(CatchableError, "Out of attempts")
+    raise newException(OutOfAttemptsError, "Out of attempts")
 
   try:
     for i in 0 ..< count:
       result.add generateAttempts()
   except CatchableError as e:
-    result.setLen(0)
     raise e

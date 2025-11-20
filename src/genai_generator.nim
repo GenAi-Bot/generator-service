@@ -81,10 +81,11 @@ proc main {.async.} =
         $(%(generated)),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
       )
+    except InvalidStartError:
+      await req.respond(Http400, "Not enough samples to use provided \"begin\"")
     except CatchableError as e:
-      if e.msg.startsWith("Key not found in model:"):
-        await req.respond(Http500, "Not enough samples to use provided \"begin\"")
-      else: await req.respond(Http500, "Failed to generate")
+      echo e.msg
+      await req.respond(Http500, "Failed to generate")
     finally:
       req.client.close()
 
