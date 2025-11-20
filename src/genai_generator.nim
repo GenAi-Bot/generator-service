@@ -1,4 +1,4 @@
-import asynchttpserver, asyncdispatch, strutils, tables, json, os
+import asynchttpserver, asyncdispatch, strutils, tables, json, os, asyncnet
 import redis
 import keepers, middlewares, helpers, generator
 
@@ -68,13 +68,17 @@ proc main {.async.} =
       return
 
     try:
+      let generated = generator.generate(
+        rawSamples = lines,
+        maxLength = maxSymbols,
+        attempts = maxAttempts,
+        begin = begin,
+        count = count
+      )
+
       await req.respond(
         Http200,
-        $(
-          %(
-            lines.generate(maxLength = maxSymbols, attempts = maxAttempts, begin = begin, count = count)
-          )
-        ),
+        $(%(generated)),
         newHttpHeaders({ "Content-type": "application/json; charset=utf-8" })
       )
     except CatchableError as e:
@@ -82,7 +86,7 @@ proc main {.async.} =
         await req.respond(Http500, "Not enough samples to use provided \"begin\"")
       else: await req.respond(Http500, "Failed to generate")
     finally:
-      lines.setLen(0)
+      req.client.close()
 
   while true:
     if server.shouldAcceptRequest():
