@@ -33,7 +33,7 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
     seq[string]] {.async.} =
   case keeper.kind:
   of kkLocal:
-    # not used in actual GenAi project, read disclaimer here below (placed before lines interator)
+    # not used in actual GenAi project, read disclaimer here below (placed before lines iterator)
     if not keeper.channelExists(channel):
       return @[]
 
