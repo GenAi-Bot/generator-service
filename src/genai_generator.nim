@@ -60,6 +60,7 @@ proc main {.async.} =
           "true" else: false
       count = parseInt(str = query.getOrDefault("count"), default = 1, min = 1, max = 5)
       begin = query.getOrDefault("begin")
+      keySize = parseInt(str = query.getOrDefault("key_size"), default = 1, min = 1, max = 3)
 
     var lines = await keeper.getMessages(channelId, filterLinks)
 
@@ -69,11 +70,12 @@ proc main {.async.} =
 
     try:
       let generated = generator.generate(
-        rawSamples = lines,
+        rawSamples = lines.move,
         maxLength = maxSymbols,
         attempts = maxAttempts,
         begin = begin,
-        count = count
+        count = count,
+        keySize = keySize
       )
 
       await req.respond(
