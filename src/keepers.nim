@@ -33,6 +33,7 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
     seq[string]] {.async.} =
   case keeper.kind:
   of kkLocal:
+    # not used in actual GenAi project, read disclaimer here below (placed before lines interator)
     if not keeper.channelExists(channel):
       return @[]
 
@@ -44,20 +45,22 @@ proc getMessages*(keeper: Keeper, channel: string, cleanURIs = false): Future[
       fileSize = file.getFileSize()
       maxRead: int64 = if keeper.maxLines == -1: fileSize else: keeper.maxLines * 4_000
       startPos: int64 = if maxRead >= fileSize: 0 else: fileSize - maxRead
-      splitterRe = re"""^\d{17,19}ඞ"""
       uriRe = re"""(https?:\/\/[^\s/$.?#].[^\s]*)"""
+
+    if maxRead == 0: return @[]
 
     file.setFilePos(startPos)
 
+    # this is an abstract way to read messages from local files, if using in own project
+    # make sure to store encrypted messages and implement your decryption here
     let content = await file.read(maxRead.int)
     for line in ascendingLines(content):
-      let processLine = if line.len > 20 and line.find("ඞ") in 17..19: line.replace(splitterRe) else: line
       if cleanURIs:
-        let str = processLine.replace(uriRe).strip
+        let str = line.replace(uriRe)
         if str.len > 0:
-          result.add(str)
+          result.add(str.strip())
       else:
-        result.add(processLine)
+        result.add(line)
 
       if result.len == keeper.maxLines: break
   of kkRemote:
