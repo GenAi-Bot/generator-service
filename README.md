@@ -1,3 +1,6 @@
+## Project moved to GitLab
+If you want to track new updates, check [GitLab repository](https://gitlab.com/genai-bot/generator-service) (and an org as a whole, if that's interested you)
+
 # genai-generator-service
 Generator service for GenAi Discord bot
 
